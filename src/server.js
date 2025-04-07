@@ -5,11 +5,6 @@ const app = require('./app');
 
 let server;
 
-// ✅ Log config values (non-sensitive)
-logger.info(`Running in ${config.env} mode`);
-logger.info(`App will run on port ${config.port}`);
-logger.info(`Mongo URL: ${config.mongoose.url}`);
-
 // Connect to MongoDB
 mongoose.connect(config.mongoose.url, {
     useNewUrlParser: true,

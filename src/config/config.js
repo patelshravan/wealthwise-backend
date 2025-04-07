@@ -8,7 +8,7 @@ if (process.env.NODE_ENV !== 'production') {
 
 const envVarsSchema = Joi.object().keys({
     NODE_ENV: Joi.string().valid('production', 'development', 'test').required(),
-    PORT: Joi.number().default(5000),
+    PORT: Joi.number().required(),
     MONGODB_URL: Joi.string().required(),
     JWT_SECRET: Joi.string().required(),
     JWT_ACCESS_EXPIRATION_MINUTES: Joi.number().default(30),
