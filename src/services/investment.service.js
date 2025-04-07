@@ -1,4 +1,4 @@
-const Investment = require('../models/investment');
+const Investment = require('../models/Investment');
 const CONSTANTS = require('../config/constant');
 
 const createInvestment = async (data) => {
