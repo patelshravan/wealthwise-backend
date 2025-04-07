@@ -45,6 +45,13 @@ module.exports = {
     EXPENSE_DELETE: 'Expense deleted successfully!',
     EXPENSE_NOT_FOUND: 'Expense not found',
 
+    // SAVINGS
+    SAVINGS_CREATE: 'Savings created successfully!',
+    SAVINGS_FETCH: 'Savings fetched successfully!',
+    SAVINGS_UPDATE: 'Savings updated successfully!',
+    SAVINGS_DELETE: 'Savings deleted successfully!',
+    SAVINGS_NOT_FOUND: 'Savings not found',
+
     // INVESTMENT
     INVESTMENT_CREATE: 'Investment created successfully',
     INVESTMENT_FETCH: 'Investments fetched successfully',

@@ -22,7 +22,7 @@ const register = async (name, email, password, confirmPassword) => {
         const emailOTPExpires = Date.now() + 10 * 60 * 1000;
 
         await User.create({ name, email, password, emailOTP, emailOTPExpires });
-        // await sendOtpOnMail(email, name, emailOTP);
+        await sendOtpOnMail(email, name, emailOTP);
 
         return { status: CONSTANTS.CREATED_CODE, message: CONSTANTS.USER_CREATE };
     } catch (error) {
@@ -111,7 +111,7 @@ const forgotPassword = async (email) => {
         user.passwordResetExpires = passwordResetExpires;
         await user.save();
 
-        // await sendPasswordResetOtpOnMail(email, user.name, passwordResetOTP);
+        await sendPasswordResetOtpOnMail(email, user.name, passwordResetOTP);
 
         return { status: CONSTANTS.SUCCESSFUL, message: CONSTANTS.FORGOT_PASSWORD };
     } catch (error) {
@@ -161,7 +161,7 @@ const resendEmailOtp = async (email) => {
         user.emailOTPExpires = emailOTPExpires;
         await user.save();
 
-        // await sendOtpOnMail(email, user.name, emailOTP);
+        await sendOtpOnMail(email, user.name, emailOTP);
 
         return { status: CONSTANTS.SUCCESSFUL, message: CONSTANTS.OTP_RESEND };
     } catch (error) {
@@ -185,7 +185,7 @@ const resendPasswordResetOtp = async (email) => {
         user.passwordResetExpires = passwordResetExpires;
         await user.save();
 
-        // await sendPasswordResetOtpOnMail(email, user.name, passwordResetOTP);
+        await sendPasswordResetOtpOnMail(email, user.name, passwordResetOTP);
 
         return { status: CONSTANTS.SUCCESSFUL, message: CONSTANTS.PASSWORD_RESET_OTP_RESEND };
     } catch (error) {
