@@ -87,8 +87,9 @@ const login = async (email, password) => {
                 _id: user._id,
                 name: user.name,
                 email: user.email,
+                profileImage: user.profileImage || '',
                 token,
-            }
+            },
         };
     } catch (error) {
         console.error('Error in login service:', error);

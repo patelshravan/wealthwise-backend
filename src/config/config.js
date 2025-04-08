@@ -14,12 +14,15 @@ const envVarsSchema = Joi.object().keys({
     JWT_ACCESS_EXPIRATION_MINUTES: Joi.number().default(30),
     JWT_REFRESH_EXPIRATION_DAYS: Joi.number().default(30),
 
-    // ✅ Add these for email validation
     SMTP_HOST: Joi.string().required(),
     SMTP_PORT: Joi.number().required(),
     SMTP_USERNAME: Joi.string().required(),
     SMTP_PASSWORD: Joi.string().required(),
     EMAIL_FROM: Joi.string().required(),
+
+    CLOUDINARY_CLOUD_NAME: Joi.string().required(),
+    CLOUDINARY_API_KEY: Joi.string().required(),
+    CLOUDINARY_API_SECRET: Joi.string().required(),
 }).unknown();
 
 const { value: envVars, error } = envVarsSchema.validate(process.env);
@@ -46,5 +49,10 @@ module.exports = {
             },
         },
         from: envVars.EMAIL_FROM,
+    },
+    cloudinary: {
+        cloud_name: envVars.CLOUDINARY_CLOUD_NAME,
+        api_key: envVars.CLOUDINARY_API_KEY,
+        api_secret: envVars.CLOUDINARY_API_SECRET,
     },
 };

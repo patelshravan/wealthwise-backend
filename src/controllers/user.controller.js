@@ -13,10 +13,12 @@ const getUserProfile = catchAsync(async (req, res) => {
 
 // Update user profile by ID
 const updateUserProfile = catchAsync(async (req, res) => {
-    const updatedUser = await userService.updateUserById(req.params.id, req.body);
+    const updatedUser = await userService.updateUserById(req.params.id, req.body, req.file);
+
     if (!updatedUser) {
         return res.status(CONSTANTS.NOT_FOUND).json({ error: CONSTANTS.USER_NOT_FOUND });
     }
+
     res.status(CONSTANTS.SUCCESSFUL).json({ message: CONSTANTS.USER_UPDATED, data: updatedUser });
 });
 
