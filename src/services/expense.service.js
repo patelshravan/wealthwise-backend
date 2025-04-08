@@ -1,7 +1,7 @@
 const Expense = require("../models/Expense");
 const CONSTANTS = require("../config/constant");
 const { uploadImageToCloudinary } = require("../utils/spaceUpload");
-const fs = require('fs');
+const fs = require("fs");
 
 const createExpense = async (data, file) => {
   try {
@@ -12,6 +12,11 @@ const createExpense = async (data, file) => {
       if (data[field] !== undefined) {
         expenseData[field] = data[field];
       }
+    }
+
+    // If user didn't provide a date, use current date
+    if (!expenseData.date) {
+      expenseData.date = new Date();
     }
 
     if (file) {
