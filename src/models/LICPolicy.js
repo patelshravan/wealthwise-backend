@@ -7,6 +7,13 @@ const LICPolicySchema = new mongoose.Schema({
   policyName: String,
   premiumAmount: Number,
   dueDate: Date,
+  premiumMode: {
+    type: String,
+    required: true,
+    enum: ["monthly", "quarterly", "half-yearly", "yearly"],
+  },
+  nextDueDate: { type: Date, required: true },
+  lastPaidDate: { type: Date, default: null },
   maturityDate: Date,
 });
 

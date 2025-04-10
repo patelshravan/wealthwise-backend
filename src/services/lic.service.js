@@ -1,9 +1,16 @@
 const LICPolicy = require("../models/LICPolicy");
 const CONSTANTS = require("../config/constant");
+const { calculateNextDueDate } = require("../utils/licUtils");
 
 const createPolicy = async (data) => {
   try {
+    // Auto-calculate nextDueDate if needed
+    if (!data.nextDueDate && data.dueDate && data.premiumMode) {
+      data.nextDueDate = calculateNextDueDate(data.dueDate, data.premiumMode);
+    }
+
     const policy = await LICPolicy.create(data);
+
     return {
       status: CONSTANTS.SUCCESSFUL,
       data: policy,
@@ -11,6 +18,16 @@ const createPolicy = async (data) => {
     };
   } catch (error) {
     console.error("Error in createPolicy service:", error);
+
+    // Handle validation errors
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return {
+        status: 400,
+        message: messages.join(", "), // Example: "nextDueDate is required, premiumMode is required"
+      };
+    }
+
     return {
       status: CONSTANTS.INTERNAL_SERVER_ERROR,
       message: CONSTANTS.INTERNAL_SERVER_ERROR_MSG,
@@ -55,13 +72,29 @@ const getPoliciesByUser = async (userId, search = "", page = 1, limit = 10) => {
 
 const updatePolicy = async (id, data) => {
   try {
-    const policy = await LICPolicy.findByIdAndUpdate(id, data, { new: true });
+    const policy = await LICPolicy.findById(id);
     if (!policy) {
       return { status: CONSTANTS.NOT_FOUND, message: CONSTANTS.LIC_NOT_FOUND };
     }
+
+    // STEP 1: Apply basic updates
+    Object.keys(data).forEach((key) => {
+      policy[key] = data[key]; // apply all fields, including dueDate & lastPaidDate
+    });
+
+    // STEP 2: Recalculate nextDueDate if dueDate and premiumMode exist
+    if (policy.dueDate && policy.premiumMode) {
+      policy.nextDueDate = calculateNextDueDate(
+        policy.dueDate,
+        policy.premiumMode
+      );
+    }
+
+    const updatedPolicy = await policy.save();
+
     return {
       status: CONSTANTS.SUCCESSFUL,
-      data: policy,
+      data: updatedPolicy,
       message: CONSTANTS.LIC_UPDATED,
     };
   } catch (error) {
