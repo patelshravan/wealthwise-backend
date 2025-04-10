@@ -2,6 +2,7 @@ const User = require('../../models/User');
 const CONSTANTS = require('../../config/constant');
 const { sendOtpOnMail, sendPasswordResetOtpOnMail } = require('../../utils/sendEmail');
 const generateToken = require('../../utils/generateToken');
+const bcrypt = require('bcryptjs');
 
 const register = async (name, email, password, confirmPassword) => {
     try {
@@ -195,4 +196,25 @@ const resendPasswordResetOtp = async (email) => {
     }
 };
 
-module.exports = { register, verifyOtp, login, forgotPassword, resetPassword, resendEmailOtp, resendPasswordResetOtp };
+const changePassword = async (email, currentPassword, newPassword, confirmPassword) => {
+    const user = await User.findOne({ email });
+    if (!user) {
+        return { status: 404, message: "User not found" };
+    }
+
+    const isMatch = await bcrypt.compare(currentPassword, user.password);
+    if (!isMatch) {
+        return { status: 400, message: "Current password is incorrect" };
+    }
+
+    if (newPassword !== confirmPassword) {
+        return { status: 400, message: "Passwords do not match" };
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    await user.save();
+
+    return { status: 200, message: "Password changed successfully" };
+};
+
+module.exports = { register, verifyOtp, login, forgotPassword, resetPassword, resendEmailOtp, resendPasswordResetOtp, changePassword };

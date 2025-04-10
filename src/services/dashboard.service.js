@@ -4,8 +4,6 @@ const LICPolicy = require("../models/LICPolicy");
 const Savings = require("../models/Savings");
 
 const generateSmartSuggestions = ({
-  totalExpenses,
-  totalSavings,
   investmentPerformance,
   upcomingLICPayments,
   recentActivity,
@@ -39,7 +37,7 @@ const generateSmartSuggestions = ({
     suggestions.push(
       `Your investments have grown by ${investmentPerformance.returnPercentage.toFixed(
         2
-      )}% 📈`
+      )}% 💏`
     );
   }
 
@@ -75,14 +73,19 @@ const generateSmartSuggestions = ({
   return suggestions;
 };
 
-const getMonthlyTrends = async (Model, userId, amountField = "amount") => {
+const getMonthlyTrends = async (
+  Model,
+  userId,
+  amountField = "amount",
+  dateFilter = {}
+) => {
   return await Model.aggregate([
-    { $match: { userId } },
+    { $match: { userId, ...dateFilter } },
     {
       $group: {
         _id: {
-          month: { $month: "$date" },
-          year: { $year: "$date" },
+          month: { $month: "$createdAt" },
+          year: { $year: "$createdAt" },
         },
         total: { $sum: `$${amountField}` },
       },
@@ -91,9 +94,9 @@ const getMonthlyTrends = async (Model, userId, amountField = "amount") => {
   ]);
 };
 
-const getExpenseCategoryBreakdown = async (userId) => {
+const getExpenseCategoryBreakdown = async (userId, dateFilter = {}) => {
   return await Expense.aggregate([
-    { $match: { userId } },
+    { $match: { userId, ...dateFilter } },
     {
       $group: {
         _id: "$category",
@@ -104,7 +107,17 @@ const getExpenseCategoryBreakdown = async (userId) => {
   ]);
 };
 
-exports.getUserDashboardData = async (userId) => {
+exports.getUserDashboardData = async (userId, dateRange = {}) => {
+  const { startDate, endDate } = dateRange;
+
+  const dateFilter = {};
+  if (startDate && endDate) {
+    dateFilter.createdAt = {
+      $gte: new Date(startDate),
+      $lte: new Date(endDate),
+    };
+  }
+
   const [
     expenses,
     investments,
@@ -116,11 +129,11 @@ exports.getUserDashboardData = async (userId) => {
     categoryBreakdown,
   ] = await Promise.all([
     Expense.aggregate([
-      { $match: { userId } },
+      { $match: { userId, ...dateFilter } },
       { $group: { _id: null, total: { $sum: "$amount" } } },
     ]),
     Investment.aggregate([
-      { $match: { userId } },
+      { $match: { userId, ...dateFilter } },
       {
         $group: {
           _id: null,
@@ -134,13 +147,13 @@ exports.getUserDashboardData = async (userId) => {
       { $group: { _id: null, totalPremium: { $sum: "$premiumAmount" } } },
     ]),
     Savings.aggregate([
-      { $match: { userId } },
+      { $match: { userId, ...dateFilter } },
       { $group: { _id: null, totalSavings: { $sum: "$amount" } } },
     ]),
-    getMonthlyTrends(Expense, userId, "amount"),
-    getMonthlyTrends(Savings, userId, "amount"),
-    getMonthlyTrends(Investment, userId, "amountInvested"),
-    getExpenseCategoryBreakdown(userId),
+    getMonthlyTrends(Expense, userId, "amount", dateFilter),
+    getMonthlyTrends(Savings, userId, "amount", dateFilter),
+    getMonthlyTrends(Investment, userId, "amountInvested", dateFilter),
+    getExpenseCategoryBreakdown(userId, dateFilter),
   ]);
 
   const totalExpenses = expenses[0]?.total || 0;
@@ -159,9 +172,15 @@ exports.getUserDashboardData = async (userId) => {
 
   const [recentExpenses, recentSavings, recentInvestments, recentPolicies] =
     await Promise.all([
-      Expense.find({ userId }).sort({ date: -1 }).limit(5),
-      Savings.find({ userId }).sort({ date: -1 }).limit(5),
-      Investment.find({ userId }).sort({ date: -1 }).limit(5),
+      Expense.find({ userId, ...dateFilter })
+        .sort({ createdAt: -1 })
+        .limit(5),
+      Savings.find({ userId, ...dateFilter })
+        .sort({ createdAt: -1 })
+        .limit(5),
+      Investment.find({ userId, ...dateFilter })
+        .sort({ createdAt: -1 })
+        .limit(5),
       LICPolicy.find({ userId }).sort({ createdAt: -1 }).limit(5),
     ]);
 

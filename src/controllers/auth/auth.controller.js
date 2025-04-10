@@ -87,4 +87,15 @@ const resendPasswordResetOtp = catchAsync(async (req, res) => {
     }
 });
 
-module.exports = { register, verifyOtp, login, forgotPassword, resetPassword, resendEmailOtp, resendPasswordResetOtp };
+const changePassword = catchAsync(async (req, res) => {
+    try {
+        const { email, currentPassword, newPassword, confirmPassword } = req.body;
+        const result = await authService.changePassword(email, currentPassword, newPassword, confirmPassword);
+        res.status(result.status).json({ message: result.message });
+    } catch (error) {
+        console.error('Error in changePassword controller:', error);
+        res.status(CONSTANTS.INTERNAL_SERVER_ERROR).json({ message: CONSTANTS.INTERNAL_SERVER_ERROR_MSG });
+    }
+});
+
+module.exports = { register, verifyOtp, login, forgotPassword, resetPassword, resendEmailOtp, resendPasswordResetOtp, changePassword };
