@@ -197,7 +197,8 @@ const resendPasswordResetOtp = async (email) => {
 };
 
 const changePassword = async (email, currentPassword, newPassword, confirmPassword) => {
-    const user = await User.findOne({ email });
+    const user = await User.findOne({ email }).select("+password");
+
     if (!user) {
         return { status: 404, message: "User not found" };
     }
@@ -211,7 +212,7 @@ const changePassword = async (email, currentPassword, newPassword, confirmPasswo
         return { status: 400, message: "Passwords do not match" };
     }
 
-    user.password = await bcrypt.hash(newPassword, 10);
+    user.password = newPassword;
     await user.save();
 
     return { status: 200, message: "Password changed successfully" };
