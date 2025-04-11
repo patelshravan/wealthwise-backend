@@ -2,12 +2,14 @@ const Expense = require("../models/Expense");
 const Investment = require("../models/Investment");
 const LICPolicy = require("../models/LICPolicy");
 const Savings = require("../models/Savings");
+const User = require("../models/User");
 
 const generateSmartSuggestions = ({
   investmentPerformance,
   upcomingLICPayments,
   recentActivity,
   trends,
+  financialGoal
 }) => {
   const suggestions = [];
 
@@ -67,6 +69,23 @@ const generateSmartSuggestions = ({
     const lastThree = trends.savings.slice(-3).map((s) => s.total);
     if (lastThree[2] > lastThree[1] && lastThree[1] > lastThree[0]) {
       suggestions.push("Your savings are growing steadily 👏");
+    }
+  }
+
+  // 💰 Financial goal check
+  if (financialGoal && trends.savings?.length > 0) {
+    const thisMonth = new Date().getMonth() + 1;
+    const thisMonthSaving =
+      trends.savings.find((item) => item._id.month === thisMonth)?.total || 0;
+
+    if (thisMonthSaving < financialGoal) {
+      suggestions.push(
+        `You're ₹${(financialGoal - thisMonthSaving).toLocaleString(
+          "en-IN"
+        )} short of your savings goal this month 😟`
+      );
+    } else {
+      suggestions.push(`You've met your savings goal this month 🎉👏`);
     }
   }
 
@@ -202,6 +221,8 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
     premiumMode: p.premiumMode,
   }));
 
+  const user = await User.findById(userId);
+  const financialGoal = user?.preferences?.monthlyGoal || 0;
   const smartSuggestions = generateSmartSuggestions({
     totalExpenses,
     totalSavings,
@@ -218,6 +239,7 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
       savings: monthlySavings,
       investments: monthlyInvestments,
     },
+    financialGoal
   });
 
   return {
@@ -246,5 +268,6 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
     },
     upcomingLICPayments: formattedUpcomingPolicies,
     smartSuggestions,
+
   };
 };

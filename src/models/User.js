@@ -13,6 +13,13 @@ const UserSchema = new mongoose.Schema({
     emailOTPExpires: Date,
     passwordResetOTP: String,
     passwordResetExpires: Date,
+    preferences: {
+        country: { type: String, default: 'India' },
+        currency: { type: String, default: 'INR' },
+        dateFormat: { type: String, default: 'DD/MM/YYYY' },
+        theme: { type: String, enum: ['light', 'dark'], default: 'light' },
+        monthlyGoal: { type: Number, default: 0 },
+    },
 }, { timestamps: true });
 
 // Hash password before save

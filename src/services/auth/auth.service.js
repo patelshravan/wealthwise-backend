@@ -23,7 +23,7 @@ const register = async (name, email, password, confirmPassword) => {
         const emailOTPExpires = Date.now() + 10 * 60 * 1000;
 
         await User.create({ name, email, password, emailOTP, emailOTPExpires });
-        await sendOtpOnMail(email, name, emailOTP);
+        // await sendOtpOnMail(email, name, emailOTP);
 
         return { status: CONSTANTS.CREATED_CODE, message: CONSTANTS.USER_CREATE };
     } catch (error) {
@@ -89,6 +89,7 @@ const login = async (email, password) => {
                 name: user.name,
                 email: user.email,
                 profileImage: user.profileImage || '',
+                preferences: user.preferences || {},
                 token,
             },
         };

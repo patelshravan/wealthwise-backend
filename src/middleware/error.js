@@ -8,14 +8,17 @@ const errorConverter = (err, req, res, next) => {
     let error = err;
 
     if (!(error instanceof ApiError)) {
-        const statusCode =
-            error.statusCode && typeof error.statusCode === 'number'
-                ? error.statusCode
-                : error instanceof mongoose.Error
-                    ? httpStatus.BAD_REQUEST
-                    : httpStatus.INTERNAL_SERVER_ERROR;
+        let statusCode;
+        if (error.statusCode && Number.isInteger(error.statusCode)) {
+            statusCode = error.statusCode;
+        } else if (error instanceof mongoose.Error) {
+            statusCode = httpStatus.BAD_REQUEST || 400; // Fallback to 400 if httpStatus.BAD_REQUEST is invalid
+        } else {
+            statusCode = httpStatus.INTERNAL_SERVER_ERROR || 500; // Fallback to 500 if httpStatus.INTERNAL_SERVER_ERROR is invalid
+        }
 
-        const message = error.message || httpStatus[statusCode];
+        const message = error.message || httpStatus[statusCode] || 'An unexpected error occurred';
+        console.log('Creating ApiError in errorConverter:', { statusCode, message, isMongooseError: error instanceof mongoose.Error });
         error = new ApiError(statusCode, message, false, err.stack);
     }
 
@@ -26,14 +29,14 @@ const errorConverter = (err, req, res, next) => {
 const errorHandler = (err, req, res, next) => {
     let { statusCode, message } = err;
 
-    // ✅ Ensure valid fallback
-    if (!statusCode || typeof statusCode !== "number") {
-        statusCode = httpStatus.INTERNAL_SERVER_ERROR;
+    if (!Number.isInteger(statusCode)) {
+        statusCode = httpStatus.INTERNAL_SERVER_ERROR || 500;
+        message = httpStatus[httpStatus.INTERNAL_SERVER_ERROR] || 'Internal Server Error';
     }
 
     if (config.env === 'production' && !err.isOperational) {
-        statusCode = httpStatus.INTERNAL_SERVER_ERROR;
-        message = httpStatus[httpStatus.INTERNAL_SERVER_ERROR];
+        statusCode = httpStatus.INTERNAL_SERVER_ERROR || 500;
+        message = httpStatus[httpStatus.INTERNAL_SERVER_ERROR] || 'Internal Server Error';
     }
 
     res.locals.errorMessage = err.message;

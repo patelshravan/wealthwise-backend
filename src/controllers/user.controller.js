@@ -37,9 +37,49 @@ const getAllUsers = catchAsync(async (req, res) => {
     res.status(CONSTANTS.SUCCESSFUL).json({ message: CONSTANTS.USER_FETCH, data: users });
 });
 
+const updateUserPreferences = catchAsync(async (req, res) => {
+    const userId = req.user.id;
+    const preferences = req.body;
+
+    const result = await userService.updatePreferences(userId, preferences);
+    res.status(result.status).json({ message: result.message, data: result.data });
+});
+
+const verifyPasswordBeforeDelete = catchAsync(async (req, res) => {
+    try {
+        const userId = req.user._id;
+        const { password } = req.body;
+        const isValid = await userService.checkPassword(userId, password);
+
+        if (!isValid) {
+            return res.status(400).json({ success: false, message: "Invalid password" });
+        }
+
+        res.json({ success: true });
+    } catch (err) {
+        console.error("Password verify error:", err);
+        res.status(500).json({ success: false, message: "Server error" });
+    }
+});
+
+const deleteAccount = catchAsync(async (req, res) => {
+    const userId = req.user._id;
+
+    const result = await userService.deleteUserAccount(userId);
+
+    if (result.success) {
+        res.json({ message: "Account deleted successfully." });
+    } else {
+        res.status(500).json({ message: result.message || "Failed to delete account." });
+    }
+});
+
 module.exports = {
     getUserProfile,
     updateUserProfile,
     deleteUserProfile,
     getAllUsers,
+    updateUserPreferences,
+    verifyPasswordBeforeDelete,
+    deleteAccount
 };

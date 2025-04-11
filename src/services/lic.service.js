@@ -42,14 +42,14 @@ const getPoliciesByUser = async (userId, search = "", page = 1, limit = 10) => {
       $or: [
         { policyNumber: { $regex: search, $options: "i" } },
         { policyName: { $regex: search, $options: "i" } },
-        ...(isNaN(search) ? [] : [{ premiumAmount: Number(search) }]), // Only add this if search is a number
+        ...(isNaN(search) ? [] : [{ premiumAmount: Number(search) }]),
       ],
     };
 
     const options = {
       page,
       limit,
-      sort: { date: -1 },
+      sort: { createdAt: -1 },
     };
 
     const result = await LICPolicy.paginate(query, options);

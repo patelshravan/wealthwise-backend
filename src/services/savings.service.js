@@ -24,7 +24,7 @@ const getSavingsByUser = async (userId, search = "", page = 1, limit = 10) => {
     const options = {
       page,
       limit,
-      sort: { date: -1 },
+      sort: { createdAt: -1 },
     };
 
     const result = await Savings.paginate(query, options);

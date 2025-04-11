@@ -1,6 +1,7 @@
 const authService = require('../../services/auth/auth.service');
 const CONSTANTS = require('../../config/constant');
 const catchAsync = require('../../utils/catchAsync');
+const LoginActivity = require('../../models/LoginActivity');
 
 const register = catchAsync(async (req, res) => {
     const { name, email, password, confirmPassword } = req.body;
@@ -28,7 +29,20 @@ const login = catchAsync(async (req, res) => {
             return res.status(result.status).json({ message: result.message });
         }
 
-        // Send a success message along with the data
+        // ✅ TRACK LOGIN ACTIVITY HERE
+        const userAgent = req.headers['user-agent'];
+        const ip = req.ip || req.connection.remoteAddress;
+
+        const { _id: userId } = result.data;
+
+        // Save login activity
+        await LoginActivity.create({
+            userId,
+            ipAddress: ip,
+            browser: userAgent,
+            loggedInAt: new Date()
+        });
+
         res.json({
             message: CONSTANTS.USER_LOGIN_SUCCESS,
             ...result.data
@@ -36,6 +50,21 @@ const login = catchAsync(async (req, res) => {
     } catch (error) {
         console.error('Error in login controller:', error);
         res.status(CONSTANTS.INTERNAL_SERVER_ERROR).json({ message: CONSTANTS.INTERNAL_SERVER_ERROR_MSG });
+    }
+});
+
+const getLoginActivity = catchAsync(async (req, res) => {
+    try {
+        const userId = req.user._id;
+
+        const activities = await LoginActivity.find({ userId })
+            .sort({ loggedInAt: -1 })
+            .limit(10);
+
+        res.status(200).json({ message: "Login activity fetched", data: activities });
+    } catch (error) {
+        console.error("Error in getLoginActivity controller:", error);
+        res.status(500).json({ message: CONSTANTS.INTERNAL_SERVER_ERROR_MSG });
     }
 });
 
@@ -98,4 +127,4 @@ const changePassword = catchAsync(async (req, res) => {
     }
 });
 
-module.exports = { register, verifyOtp, login, forgotPassword, resetPassword, resendEmailOtp, resendPasswordResetOtp, changePassword };
+module.exports = { register, verifyOtp, login, forgotPassword, resetPassword, resendEmailOtp, resendPasswordResetOtp, changePassword, getLoginActivity };

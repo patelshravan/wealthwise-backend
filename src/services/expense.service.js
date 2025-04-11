@@ -49,8 +49,8 @@ const getExpensesByUser = async (userId, search = "", page = 1, limit = 10) => {
     const options = {
       page,
       limit,
-      sort: { date: -1 },
-      select: "userId amount category note date image",
+      sort: { createdAt: -1 },
+      select: "userId amount category note date image createdAt",
     };
 
     const result = await Expense.paginate(query, options);

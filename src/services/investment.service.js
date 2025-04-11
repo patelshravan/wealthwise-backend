@@ -18,22 +18,20 @@ const createInvestment = async (data) => {
   }
 };
 
-const getInvestmentsByUser = async (
-  userId,
-  search = "",
-  page = 1,
-  limit = 10
-) => {
+const getInvestmentsByUser = async (userId, search = "", page = 1, limit = 10) => {
   try {
     const query = {
       userId,
-      $or: [{ name: { $regex: search, $options: "i" } }],
+      $or: [
+        { name: { $regex: search, $options: "i" } },
+        { type: { $regex: search, $options: "i" } },
+      ],
     };
 
     const options = {
       page,
       limit,
-      sort: { date: -1 },
+      sort: { createdAt: -1 },
     };
 
     const result = await Investment.paginate(query, options);
