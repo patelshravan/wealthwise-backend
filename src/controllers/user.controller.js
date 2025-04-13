@@ -74,6 +74,22 @@ const deleteAccount = catchAsync(async (req, res) => {
     }
 });
 
+const requestEmailUpdate = catchAsync(async (req, res) => {
+    const { newEmail } = req.body;
+    const userId = req.user._id;
+
+    const result = await userService.requestEmailUpdate(userId, newEmail);
+    res.status(result.success ? 200 : 400).json(result);
+});
+
+const verifyEmailUpdate = catchAsync(async (req, res) => {
+    const { otp } = req.body;
+    const userId = req.user._id;
+
+    const result = await userService.verifyAndUpdateEmail(userId, otp);
+    res.status(result.success ? 200 : 400).json(result);
+});
+
 module.exports = {
     getUserProfile,
     updateUserProfile,
@@ -81,5 +97,7 @@ module.exports = {
     getAllUsers,
     updateUserPreferences,
     verifyPasswordBeforeDelete,
-    deleteAccount
+    deleteAccount,
+    requestEmailUpdate,
+    verifyEmailUpdate
 };

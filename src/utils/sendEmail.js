@@ -97,4 +97,42 @@ const sendPasswordResetOtpOnMail = async (email, name, otp) => {
   }
 };
 
-module.exports = { sendOtpOnMail, sendPasswordResetOtpOnMail };
+// Send OTP for Email Update
+const sendEmailUpdateOtp = async (email, name, otp) => {
+  const emailTemplate = {
+    body: {
+      name: name,
+      title: "Verify Your New Email Address for Wealthwise",
+      intro: `Hello ${name},<br/><br/>We received a request to update the email address associated with your Wealthwise account.`,
+      action: {
+        instructions: "Please use the OTP below to verify your new email address:",
+        button: {
+          color: "#007bff",
+          text: `${otp}`,
+        },
+      },
+      outro: `This OTP is valid for <strong>10 minutes</strong>. If you did not request this change, please ignore this email.`,
+      signature: "Warm regards,<br/>The Wealthwise Team",
+    },
+  };
+
+  const emailBody = mailGenerator.generate(emailTemplate);
+  const emailText = mailGenerator.generatePlaintext(emailTemplate);
+
+  const msg = {
+    to: email,
+    from: config.email.from,
+    subject: "Verify Your New Email for Wealthwise",
+    text: emailText,
+    html: emailBody,
+  };
+
+  try {
+    await sgMail.send(msg);
+    console.log("✅ Email update OTP sent to:", email);
+  } catch (error) {
+    console.error("❌ Email update OTP sending failed:", error.response?.body || error.message);
+  }
+};
+
+module.exports = { sendOtpOnMail, sendPasswordResetOtpOnMail, sendEmailUpdateOtp };

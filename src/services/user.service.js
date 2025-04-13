@@ -7,6 +7,7 @@ const User = require('../models/User');
 const { uploadImageToCloudinary } = require('../utils/spaceUpload');
 const fs = require('fs');
 const bcrypt = require("bcryptjs");
+const { sendEmailUpdateOtp } = require('../utils/sendEmail');
 
 // Get user by ID
 const getUserById = (id) => User.findById(id);
@@ -79,6 +80,43 @@ const deleteUserAccount = async (userId) => {
     }
 };
 
+// Step 1: Request OTP for Email Update
+const requestEmailUpdate = async (userId, newEmail) => {
+    const user = await User.findById(userId);
+    if (!user) return { success: false, message: "User not found" };
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+    const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    user.pendingEmail = newEmail;
+    user.emailUpdateOTP = otp;
+    user.emailUpdateExpires = expiry;
+
+    await user.save();
+
+    await sendEmailUpdateOtp(newEmail, user.name, otp);
+    return { success: true, message: "OTP sent to new email." };
+};
+
+// Step 2: Verify OTP and update email
+const verifyAndUpdateEmail = async (userId, otp) => {
+    const user = await User.findById(userId);
+    if (!user || !user.pendingEmail) return { success: false, message: "No pending email update" };
+
+    if (user.emailUpdateOTP !== otp || user.emailUpdateExpires < Date.now()) {
+        return { success: false, message: "Invalid or expired OTP" };
+    }
+
+    user.email = user.pendingEmail;
+    user.pendingEmail = null;
+    user.emailUpdateOTP = null;
+    user.emailUpdateExpires = null;
+
+    await user.save();
+
+    return { success: true, message: "Email updated successfully", data: user };
+};
+
 module.exports = {
     getUserById,
     updateUserById,
@@ -86,5 +124,7 @@ module.exports = {
     getAllUsers,
     updatePreferences,
     checkPassword,
-    deleteUserAccount
+    deleteUserAccount,
+    requestEmailUpdate,
+    verifyAndUpdateEmail
 };

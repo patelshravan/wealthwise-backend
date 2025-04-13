@@ -10,6 +10,8 @@ router.get('/:id', protect, userController.getUserProfile);
 router.put("/preferences", protect, userController.updateUserPreferences);
 router.put('/:id', protect, upload.single('profileImage'), userController.updateUserProfile);
 router.post("/verify-password", protect, userController.verifyPasswordBeforeDelete);
+router.post("/email/update-request", protect, userController.requestEmailUpdate);
+router.post("/email/verify", protect, userController.verifyEmailUpdate);
 router.delete("/account/delete", protect, userController.deleteAccount);
 router.delete('/:id', protect, userController.deleteUserProfile);
 
