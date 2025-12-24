@@ -8,6 +8,7 @@ const ExpenseRoute = require("./expense.routes");
 const SavingsRoute = require("./savings.routes");
 const InvestmentRoute = require("./investment.routes");
 const LicRoute = require("./lic.routes");
+const IncomeRoute = require("./income.routes");
 
 const router = express.Router();
 
@@ -20,6 +21,7 @@ const defaultRoutes = [
   { path: "/savings", route: SavingsRoute },
   { path: "/investment", route: InvestmentRoute },
   { path: "/lic-policy", route: LicRoute },
+  { path: "/income", route: IncomeRoute },
 ];
 
 defaultRoutes.forEach((route) => {

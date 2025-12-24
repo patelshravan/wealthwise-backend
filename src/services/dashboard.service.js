@@ -2,9 +2,13 @@ const Expense = require("../models/Expense");
 const Investment = require("../models/Investment");
 const LICPolicy = require("../models/LICPolicy");
 const Savings = require("../models/Savings");
+const Income = require("../models/Income");
 const User = require("../models/User");
 
 const generateSmartSuggestions = ({
+  totalIncome,
+  totalExpenses,
+  remainingBalance,
   investmentPerformance,
   upcomingLICPayments,
   recentActivity,
@@ -30,9 +34,24 @@ const generateSmartSuggestions = ({
 
   const monthlySaving =
     trends.savings?.find((item) => item._id.month === thisMonth)?.total || 0;
+  const monthlyIncomeAmount =
+    trends.income?.find((item) => item._id.month === thisMonth)?.total || 0;
 
-  if (monthlySaving === 0) {
+  if (monthlySaving === 0 && monthlyIncomeAmount > 0) {
     suggestions.push("You haven't saved anything this month 😬");
+  }
+
+  if (remainingBalance < 0) {
+    suggestions.push(`You're overspending by ${Math.abs(remainingBalance).toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} ⚠️`);
+  } else if (remainingBalance > 0 && monthlyIncomeAmount > 0) {
+    suggestions.push(`Great! You have ${remainingBalance.toLocaleString('en-IN', { style: 'currency', currency: 'INR' })} remaining this month 💰`);
+  }
+
+  if (totalIncome > 0 && totalExpenses > 0) {
+    const expenseRatio = (totalExpenses / totalIncome) * 100;
+    if (expenseRatio > 80) {
+      suggestions.push("Your expenses are over 80% of your income. Consider reducing spending 💸");
+    }
   }
 
   if (investmentPerformance.returnPercentage > 0) {
@@ -142,9 +161,11 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
     investments,
     policies,
     savings,
+    income,
     monthlyExpenses,
     monthlySavings,
     monthlyInvestments,
+    monthlyIncome,
     categoryBreakdown,
   ] = await Promise.all([
     Expense.aggregate([
@@ -169,9 +190,14 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
       { $match: { userId, ...dateFilter } },
       { $group: { _id: null, totalSavings: { $sum: "$amount" } } },
     ]),
+    Income.aggregate([
+      { $match: { userId, ...dateFilter } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ]),
     getMonthlyTrends(Expense, userId, "amount", dateFilter),
     getMonthlyTrends(Savings, userId, "amount", dateFilter),
     getMonthlyTrends(Investment, userId, "amountInvested", dateFilter),
+    getMonthlyTrends(Income, userId, "amount", dateFilter),
     getExpenseCategoryBreakdown(userId, dateFilter),
   ]);
 
@@ -180,6 +206,11 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
   const totalPremium = policies[0]?.totalPremium || 0;
   const totalInvested = investments[0]?.totalInvested || 0;
   const totalCurrentValue = investments[0]?.totalCurrentValue || 0;
+  const totalIncome = income[0]?.total || 0;
+
+  // Calculate remaining balance: Income - (Expenses + Premiums)
+  const totalOutgoings = totalExpenses + totalPremium;
+  const remainingBalance = totalIncome - totalOutgoings;
 
   const investmentPerformance = {
     gainOrLoss: totalCurrentValue - totalInvested,
@@ -189,7 +220,7 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
         : 0,
   };
 
-  const [recentExpenses, recentSavings, recentInvestments, recentPolicies] =
+  const [recentExpenses, recentSavings, recentInvestments, recentPolicies, recentIncome] =
     await Promise.all([
       Expense.find({ userId, ...dateFilter })
         .sort({ createdAt: -1 })
@@ -201,6 +232,9 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
         .sort({ createdAt: -1 })
         .limit(5),
       LICPolicy.find({ userId }).sort({ createdAt: -1 }).limit(5),
+      Income.find({ userId, ...dateFilter })
+        .sort({ createdAt: -1 })
+        .limit(5),
     ]);
 
   const now = new Date();
@@ -226,6 +260,8 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
   const smartSuggestions = generateSmartSuggestions({
     totalExpenses,
     totalSavings,
+    totalIncome,
+    remainingBalance,
     investmentPerformance,
     upcomingLICPayments: formattedUpcomingPolicies,
     recentActivity: {
@@ -233,11 +269,13 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
       savings: recentSavings,
       investments: recentInvestments,
       policies: recentPolicies,
+      income: recentIncome,
     },
     trends: {
       expenses: monthlyExpenses,
       savings: monthlySavings,
       investments: monthlyInvestments,
+      income: monthlyIncome,
     },
     financialGoal
   });
@@ -248,6 +286,8 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
     totalCurrentValue,
     totalPremium,
     totalSavings,
+    totalIncome,
+    remainingBalance,
     investmentPerformance: {
       gainOrLoss: investmentPerformance.gainOrLoss,
       returnPercentage: Number(
@@ -258,6 +298,7 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
       expenses: monthlyExpenses,
       savings: monthlySavings,
       investments: monthlyInvestments,
+      income: monthlyIncome,
     },
     categoryBreakdown: categoryBreakdown || [],
     recentActivity: {
@@ -265,6 +306,7 @@ exports.getUserDashboardData = async (userId, dateRange = {}) => {
       savings: recentSavings,
       investments: recentInvestments,
       policies: recentPolicies,
+      income: recentIncome,
     },
     upcomingLICPayments: formattedUpcomingPolicies,
     smartSuggestions,
